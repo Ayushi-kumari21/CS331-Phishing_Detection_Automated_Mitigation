@@ -126,3 +126,32 @@ flowchart TB
     API --> Threat
     Risk --> DB
    
+```
+---
+## IV. Justification behind Choosing Layered Monolithic Architecture
+---
+When designing a phishing detection platform, selecting the right software architecture is crucial. After evaluating multiple options, the layered architecture was chosen because it provides a strong balance between scalability, maintainability, performance, security, and development simplicity. This architecture organizes the system into clear functional layers, making the overall structure easier to understand, develop, and extend. Below is a detailed justification.
+
+### 1.Scalability
+- The layered approach allows new modules (e.g., Domain Reputation Engine, VirusTotal integration, Gmail scanning) to be added without disrupting existing layers.
+- Clear boundaries between layers make future migration toward microservices possible if the project grows.
+- Example: Threat Intelligence can later be deployed as a separate service without redesigning the entire system.
+
+### 2. Maintainability
+- Separation of concerns ensures that each layer has a distinct responsibility.
+- Developers can modify or enhance one layer without affecting others, which simplifies debugging and evolution.
+- Example: Risk scoring logic can be updated independently of authentication mechanisms.
+  
+### 3. Performance
+- Using FastAPI enables high-speed asynchronous request handling, which is ideal for real-time phishing detection.
+- Direct communication between layers reduces network overhead compared to microservices, ensuring efficiency.
+- This is particularly suitable for an academic project where infrastructure should remain lightweight yet effective.
+  
+### 4. Security
+- The architecture supports strong security practices such as JWT-based authorization, encrypted password storage, and protected API routes.
+- Since phishing detection systems handle sensitive user data, these safeguards are essential to maintain trust and compliance.
+  
+### 5. Development Simplicity
+- While microservices offer flexibility, they also introduce complexity in orchestration, container management, and inter-service communication.
+- For the current project scope, a layered monolithic design ensures faster development while still maintaining architectural discipline.
+- This balance allows the team to focus on core functionality rather than infrastructure overhead.
