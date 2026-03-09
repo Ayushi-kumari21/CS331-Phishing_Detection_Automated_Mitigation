@@ -1,0 +1,7 @@
+flask
+transformers
+torch
+requests
+scikit-learn
+numpy
+regex
