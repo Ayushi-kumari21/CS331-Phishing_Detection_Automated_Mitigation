@@ -99,11 +99,6 @@ export default function Header() {
       </div>
 
       <div className="flex items-center gap-5">
-<<<<<<< HEAD
-
-        {/* ✅ Replaced old Bell button with NotificationBell */}
-        <NotificationBell />
-=======
         <div className="relative">
            <button onClick={() => setOpen(!open)}
             className="relative p-2 text-gray-400 hover:text-gray-200 transition-colors">
@@ -154,7 +149,6 @@ export default function Header() {
 
           )}
       </div>
->>>>>>> cb5bbe2 (Implemented phishing detection and notification workflow)
 
         <div className="flex items-center gap-3">
           <div className="text-right">
