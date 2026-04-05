@@ -28,7 +28,7 @@
 
 ### Test Case 3: Risk Score Threshold Condition
 - **Objective:** To verify that emails with high risk scores are treated as phishing.
-- **Input:** Email with `risk_score > 70`.
+- **Input:** Email with `risk_score > 35`.
 - **Execution Steps:**
   - Scan an email with a high risk score.
   - Check classification and action taken.
