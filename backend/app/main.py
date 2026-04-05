@@ -6,7 +6,7 @@ from app.routers import auth_router, threat_router, gmail_router
 from app.routers import auth_router, threat_router
 from app.database.connection import Base, engine
 from app.models import user
-
+from app.routers.notification_router import router as notification_router
 
 # Create FastAPI app FIRST
 app = FastAPI(title="PhishGaurd Security Platform")
@@ -29,6 +29,7 @@ Base.metadata.create_all(bind=engine)
 app.include_router(auth_router.router)
 app.include_router(threat_router.router)
 app.include_router(gmail_router.router)
+app.include_router(notification_router)
 
 # OAuth scheme (tells FastAPI how to read the token)
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
