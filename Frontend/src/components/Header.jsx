@@ -33,7 +33,7 @@ export default function Header() {
     fetchUnread();
   };
 
-  // ✅ FIXED TIME FUNCTION (UTC → Local)
+  //FIXED TIME FUNCTION (UTC → Local)
   const formatTime = (dateString) => {
     const date = new Date(dateString + "Z");
     return date.toLocaleTimeString([], {
@@ -56,7 +56,7 @@ export default function Header() {
       {/* RIGHT SIDE */}
       <div className="flex items-center gap-5">
 
-        {/* 🔔 NOTIFICATION */}
+        {/* NOTIFICATION */}
         <div className="relative">
           <button
             onClick={() => setOpen(!open)}
