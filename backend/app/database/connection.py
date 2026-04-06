@@ -5,19 +5,12 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# DATABASE_URL = os.getenv("DATABASE_URL")
+BASE_DIR = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), "../../..")
+)
+DATABASE_PATH = os.path.join(BASE_DIR, "sentinelphish.db")
 
-# engine = create_engine(DATABASE_URL)
-
-# SessionLocal = sessionmaker(
-#     bind=engine,
-#     autoflush=False,
-#     autocommit=False
-# )
-
-# Base = declarative_base()
-
-DATABASE_URL = "sqlite:///./sentinelphish.db"
+DATABASE_URL = f"sqlite:///{DATABASE_PATH}"
 
 engine = create_engine(
     DATABASE_URL, connect_args={"check_same_thread": False}

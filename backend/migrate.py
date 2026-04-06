@@ -1,5 +1,15 @@
 # run this once as: python migrate.py
 import sqlite3
+from app.database.connection import engine, Base
+
+from app.models.user import User
+from app.models.email import Email
+from app.models.notification import Notification
+
+# CREATE TABLES (NEW)
+
+Base.metadata.create_all(bind=engine)
+print("Tables created successfully!")
 
 conn = sqlite3.connect("sentinelphish.db")
 cursor = conn.cursor()
@@ -18,4 +28,5 @@ except:
 
 conn.commit()
 conn.close()
-print("Done!")
+print("Migration completed!")
+

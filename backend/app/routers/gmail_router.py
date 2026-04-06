@@ -23,6 +23,9 @@ from app.models.user import User
 
 from app.services.gmail_service import authenticate_gmail, move_to_spam
 
+from app.dal.email_dal import get_email_by_gmail_id, save_email
+from app.dal.notification_dal import create_notification
+
 router = APIRouter(prefix="/connect", tags=["Gmail"])
 
 SCOPES           = ["https://www.googleapis.com/auth/gmail.modify"]
@@ -148,17 +151,14 @@ def disconnect_gmail(
 
 
 # ── 4. SCAN ────────────────────────────────────────────────────────────────────
-
 @router.post("/scan")
 def scan_emails(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    # ✅ Single place for credential validation & refresh
     creds   = _get_valid_creds(current_user, db)
     service = build("gmail", "v1", credentials=creds)
 
-    # Fetch latest 10 emails
     try:
         results  = service.users().messages().list(userId="me", maxResults=10).execute()
     except HttpError as e:
@@ -173,15 +173,29 @@ def scan_emails(
     messages = results.get("messages", [])
     scanned  = []
 
+    latest_ids = [msg["id"] for msg in messages]
+
     for message in messages:
         msg_id = message["id"]
+
+        # NO RE-SCAN
+        existing_email = get_email_by_gmail_id(db, msg_id)
+        if existing_email:
+            scanned.append({
+                "id": existing_email.gmail_id,
+                "subject": existing_email.subject,
+                "sender": existing_email.sender,
+                "category": existing_email.category,
+                "risk_score": existing_email.risk_score,
+                "action": existing_email.action_taken,
+            })
+            continue
 
         try:
             msg = service.users().messages().get(
                 userId="me", id=msg_id, format="full"
             ).execute()
         except HttpError:
-            # Skip emails we can't fetch individually
             continue
 
         headers = msg["payload"]["headers"]
@@ -195,32 +209,50 @@ def scan_emails(
             "Unknown"
         )
 
-        # ── Extract plain-text body ────────────────────────────────────────────
         body = _extract_body(msg["payload"])
 
-        # ── Risk engine call ───────────────────────────────────────────────────
         risk, risk_error = _call_risk_engine(subject, body)
 
-        # ── Mitigation ────────────────────────────────────────────────────────
         action_taken = "none"
 
         if risk_error:
-            # Don't auto-spam if we couldn't classify — log and skip mitigation
             action_taken = f"skipped_mitigation: {risk_error}"
         else:
             category   = risk.get("category", "").lower()
             risk_score = risk.get("risk_score", 0)
 
-            if category == "phishing" or risk_score > 70:
+            if category.lower() == "phishing" or risk_score > 70:
                 label_ids = msg.get("labelIds", [])
+
                 if "SPAM" not in label_ids:
                     try:
                         move_to_spam(service, msg_id)
                         action_taken = "moved_to_spam"
+
+                        #  Notification
+                        create_notification(
+                            db,
+                            subject=subject,
+                            sender=sender,
+                            action="Moved to spam (phishing detected)"
+                        )
+
                     except Exception as e:
                         action_taken = f"spam_error: {str(e)}"
                 else:
                     action_taken = "already_in_spam"
+
+        # SAVE EMAIL
+        email_data = {
+            "gmail_id": msg_id,
+            "subject": subject,
+            "sender": sender,
+            "category": risk.get("category", "Unknown"),
+            "risk_score": risk.get("risk_score", 0),
+            "action_taken": action_taken,
+        }
+
+        save_email(db, email_data)
 
         scanned.append({
             "id":         msg_id,
@@ -231,12 +263,14 @@ def scan_emails(
             "action":     action_taken,
         })
 
+    # NEW: REMOVE OLD EMAILS (NOT IN LATEST 10)
+    from app.dal.email_dal import delete_emails_not_in_list
+    delete_emails_not_in_list(db, latest_ids)
+
     return {
         "emails": scanned,
         "total":  len(scanned),
     }
-
-
 # ── private helpers ────────────────────────────────────────────────────────────
 
 def _extract_body(payload: dict) -> str:
